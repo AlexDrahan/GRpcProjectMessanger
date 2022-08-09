@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono
 
 interface UserService {
 
-    fun createUser(user: User)
+    fun createUser(user: User): Mono<User>
 
     fun deleteUser(id: String)
 
@@ -18,3 +18,4 @@ interface UserService {
 
     fun findByUserId(id: String): Mono<User?>
 }
+

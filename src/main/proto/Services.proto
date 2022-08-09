@@ -6,22 +6,25 @@ import "google/protobuf/timestamp.proto";
 //============================================================================================
 //Request
 message UserDescription{
-  message id{
-    string id = 1;
-  }
-  message name{
-    string name = 2;
-  }
-  message phoneNumber{
-    string id = 3;
-  }
-    string bio = 4;
-    repeated ChatDescription chat = 5;
-    repeated MessageDescription message = 6;
+
+  string name = 1;
+  string phoneNumber = 2;
+  string bio = 3;
+  repeated ChatDescription chat = 4;
+  repeated MessageDescription message = 5;
 }
 
+message id{
+  string id = 1;
+}
+message name{
+  string name = 2;
+}
+message phoneNumber{
+  string phoneNumber = 3;
+}
 message UserUpdateRequest{
-  UserDescription.id id = 1;
+  string userId = 1;
   UserDescription user = 2;
 }
 
@@ -37,19 +40,20 @@ message UserResponse{
 //============================================================================================
 //Request
 message MessageDescription{
-  message id{
-    string id = 1;
-  }
-  google.protobuf.Timestamp dateTime = 2;
-  message text{
-    string text = 3;
-  }
-  repeated string messageChatId = 4;
-  repeated string messageUserId = 5;
+  string text = 1;
+  string messageChatId = 2;
+  string messageUserId = 3;
 }
+message text{
+  string text = 3;
+}
+message MessageUpdateDescription{
+  string text = 1;
+}
+
 message MessageUpdateRequest{
-  MessageDescription.id id = 1;
-  MessageDescription message = 2;
+  string messageId = 1;
+  MessageUpdateDescription message = 2;
 }
 
 //Answer
@@ -57,28 +61,21 @@ message MessageResponse{
   string id = 1;
   google.protobuf.Timestamp dateTime = 2;
   string text = 3;
-  repeated string messageChatId = 4;
-  repeated string messageUserId = 5;
+  string messageChatId = 4;
+  string messageUserId = 5;
 }
 
-message MessageResponseList{
-  repeated MessageResponse messagesList = 1;
-}
 //============================================================================================
 //Request
 message ChatDescription{
-  message id{
-    string id = 1;
-  }
-  message name{
-    string name = 2;
-  }
-  repeated string messageIds =3;
-  repeated string userIds = 4;
+  string name = 1;
+  repeated string messageIds =2;
+  repeated string userIds = 3;
 }
+
 message ChatUpdateRequest{
-  ChatDescription.id chatId = 1;
-  UserDescription.id userId = 2;
+  string chatId = 1;
+  string userId = 2;
 }
 
 //Answer
@@ -88,9 +85,7 @@ message ChatResponse{
   repeated string messageIds =3;
   repeated string userIds = 4;
 }
-message ChatResponseList{
-  repeated ChatResponse chatList = 1;
-}
+
 //============================================================================================
 //Answer
 message FullChatResponse{
@@ -100,26 +95,26 @@ message FullChatResponse{
 }
 //============================================================================================
 service UserService{
-  rpc findUserById(UserDescription.id) returns (UserResponse);
-  rpc findUserByUserName(UserDescription.name) returns (UserResponse);
-  rpc findUserByPhoneNumber(UserDescription.phoneNumber) returns (UserResponse);
-  rpc createUser(UserDescription) returns (google.protobuf.Empty);
-  rpc deleteUser(UserDescription.id) returns (google.protobuf.Empty);
+  rpc findUserById(id) returns (UserResponse);
+  rpc findUserByUserName(name) returns (UserResponse);
+  rpc findUserByPhoneNumber(phoneNumber) returns (UserResponse);
+  rpc createUser(UserDescription) returns (UserResponse);
+  rpc deleteUser(id) returns (google.protobuf.Empty);
   rpc updateUser(UserUpdateRequest) returns (UserResponse);
 }
 
 service MessageService{
-  rpc findMessage(MessageDescription.text) returns (MessageResponseList);
-  rpc sendMessage(MessageDescription) returns (google.protobuf.Empty);
-  rpc deleteMessage(MessageDescription.id) returns (google.protobuf.Empty);
+  rpc findMessage(text) returns (stream MessageResponse);
+  rpc sendMessage(MessageDescription) returns (MessageResponse);
+  rpc deleteMessage(id) returns (google.protobuf.Empty);
   rpc editMessage(MessageUpdateRequest) returns (MessageResponse);
 }
 
 service ChatService{
-  rpc findAllChats(google.protobuf.Empty) returns (ChatResponseList);
-  rpc createChat(ChatDescription) returns (google.protobuf.Empty);
-  rpc deleteChat(ChatDescription.id) returns (google.protobuf.Empty);
+  rpc findAllChats(google.protobuf.Empty) returns (stream ChatResponse);
+  rpc createChat(ChatDescription) returns (ChatResponse);
+  rpc deleteChat(id) returns (google.protobuf.Empty);
   rpc addUserToTheChat(ChatUpdateRequest) returns (google.protobuf.Empty);
   rpc deleteUserFromChat(ChatUpdateRequest) returns (google.protobuf.Empty);
-  rpc getChatById(ChatDescription.id) returns (FullChatResponse);
+  rpc getChatById(id) returns (FullChatResponse);
 }

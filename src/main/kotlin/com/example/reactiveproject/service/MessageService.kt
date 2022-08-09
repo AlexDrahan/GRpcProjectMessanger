@@ -6,11 +6,12 @@ import reactor.core.publisher.Mono
 
 interface MessageService {
 
-    fun sendMessage(message: Message)
+    fun sendMessage(message: Message): Mono<Message>
 
     fun deleteMessage(messageId: String)
 
     fun editMessage(id: String, message: Message): Mono<Message>
 
     fun findMessage(text: String): Flux<Message?>
+
 }

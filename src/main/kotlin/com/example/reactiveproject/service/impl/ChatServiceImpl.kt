@@ -2,7 +2,6 @@ package com.example.reactiveproject.service.impl
 
 import com.example.reactiveproject.model.Chat
 import com.example.reactiveproject.model.FullChat
-import com.example.reactiveproject.model.Message
 import com.example.reactiveproject.model.User
 import org.springframework.beans.factory.annotation.Autowired
 import com.example.reactiveproject.repository.ChatRepository
@@ -24,9 +23,9 @@ class ChatServiceImpl(
     val messageRepository: MessageRepository?
 ) : ChatService {
 
-    override fun createChat(chat: Chat){
-        chatRepository.save(chat)
-            .subscribe()
+    override fun createChat(chat: Chat): Mono<Chat>{
+        return chatRepository.save(chat)
+
     }
 
     override fun deleteChat(id: String) {
@@ -48,7 +47,7 @@ class ChatServiceImpl(
                     id = chatId,
                     name = it.name,
                     messageIds = it.messageIds,
-                    userIds = it.userIds!!.plus(userId)
+                    userIds = it.userIds!!.plus(userId) as HashSet
                 )
             }
             .flatMap {
@@ -73,7 +72,7 @@ class ChatServiceImpl(
                     id = chatId,
                     name = it.name,
                     messageIds = it.messageIds,
-                    userIds = it.userIds!!.minus(userId)
+                    userIds = it.userIds!!.minus(userId) as HashSet
                 )
             }
             .flatMap {

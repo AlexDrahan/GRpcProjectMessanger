@@ -15,9 +15,8 @@ class UserServiceImpl(
     val userRepository: UserRepository
 ): UserService
 {
-    override fun createUser(user: User) {
-        userRepository.save(user)
-            .subscribe()
+    override fun createUser(user: User):Mono<User> {
+        return userRepository.save(user)
     }
 
     override fun deleteUser(id: String) {
