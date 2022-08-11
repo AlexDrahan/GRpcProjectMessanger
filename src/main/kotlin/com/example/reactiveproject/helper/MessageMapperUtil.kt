@@ -3,45 +3,90 @@ package com.example.reactiveproject.helper
 import com.example.reactiveproject.Services
 import com.example.reactiveproject.model.Chat
 import com.example.reactiveproject.model.Message
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.time.LocalDateTime
 
 
-fun textToGrpc(grpcText: Mono<Services.text>): String{
-    return grpcText.block()!!.text.toString()
+fun textToGrpc(grpcText: Mono<Services.text>): Mono<String>{
+    return grpcText.map {
+        it.text.toString()
+    }
 }
 
-fun grpcToMessage(message: Mono<Services.MessageDescription>): Message {
-    return message.block().let {
+fun grpcToMessage(message: Mono<Services.MessageDescription>): Mono<Message> {
+    return message.map {
         Message(
-            text = it!!.text,
+            text = it.text,
             messageChatId = it.messageChatId,
             messageUserId = it.messageUserId
         )
     }
 }
 
-fun messageToGrpc(messages: Message): Services.MessageResponse{
+fun grpcToMessageUnMono(message: Services.MessageDescription): Message {
+    return message.let {
+        Message(
+            text = it.text,
+            messageChatId = it.messageChatId,
+            messageUserId = it.messageUserId
+        )
+    }
+}
 
-    return Services.MessageResponse.newBuilder().apply {
-        id = messages.id.toString()
-        dateTime = timestampFromLocalDate(LocalDateTime.parse(messages.datetime))
-        text = messages.text
-        messageChatId = messages.messageUserId
-        messageUserId = messages.messageChatId
-        }
-        .build()
+fun messageToGrpc(messages: Flux<Message?>): Flux<Services.MessageResponse>{
+
+    return messages.map {
+        Services.MessageResponse
+            .newBuilder()
+            .apply {
+                id = it!!.id
+                text = it.text
+                dateTime = timestampFromLocalDate(LocalDateTime.parse(it.datetime))
+                messageChatId = it.messageChatId
+                messageUserId = it.messageUserId
+            }
+            .build()
+    }
 
 }
 
-fun updateGrpcToMessage(request: Mono<Services.MessageUpdateRequest>?): Pair<String, Message>{
-    return request!!.block().let {
+fun messageToGrpcMono(messages: Mono<Message>): Mono<Services.MessageResponse>{
+    return messages.map {
+        Services.MessageResponse
+            .newBuilder()
+            .apply {
+                id = it!!.id
+                text = it.text
+                dateTime = timestampFromLocalDate(LocalDateTime.parse(it.datetime))
+                messageChatId = it.messageChatId
+                messageUserId = it.messageUserId
+            }.build()
+    }
+
+}
+
+fun messageToGrpc(it: Message): Services.MessageDescription{
+    return Services.MessageDescription
+            .newBuilder()
+            .apply {
+                text = it.text
+                messageChatId = it.messageChatId
+                messageUserId = it.messageUserId
+            }.build()
+
+}
+
+
+fun updateGrpcToMessage(request: Mono<Services.MessageUpdateRequest>?): Mono<Pair<String, Message>>{
+    return request!!.map {
         it!!.messageId.toString() to Message(
             text = it.message.text
         )
     }
 }
-fun updateMessageToGrpc(message: Message): Services.MessageResponse{
+fun updateMessageToGrpc(message: Message): Mono<Services.MessageResponse>{
     return Services.MessageResponse
         .newBuilder()
         .apply {
@@ -49,4 +94,17 @@ fun updateMessageToGrpc(message: Message): Services.MessageResponse{
             dateTime = timestampFromLocalDate(LocalDateTime.parse(message.datetime))
         }
         .build()
+        .toMono()
+}
+
+fun updateMessageToGrpcMono(message: Mono<Message>): Mono<Services.MessageResponse>{
+    return message.map {
+        Services.MessageResponse
+            .newBuilder()
+            .apply {
+                text = it.text
+                dateTime = timestampFromLocalDate(LocalDateTime.parse(it.datetime))
+            }
+            .build()
+    }
 }

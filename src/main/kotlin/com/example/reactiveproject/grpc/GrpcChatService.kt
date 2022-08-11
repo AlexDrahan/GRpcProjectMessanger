@@ -25,30 +25,32 @@ class GrpcChatService: ReactorChatServiceGrpc.ChatServiceImplBase() {
     }
 
     override fun createChat(request: Mono<Services.ChatDescription>?): Mono<Services.ChatResponse> {
-        return  chatService.createChat(grpcToChat(request!!))
-            .map {
-                chatToGrpc(it)
-            }
+        return  grpcToChat(request!!)
+            .map { chatService.createChat(it) }
+            .flatMap { chatToGrpcMono(it) }
     }
 
     override fun deleteChat(request: Mono<Services.id>?): Mono<Empty> {
-        return Mono.just(empty { chatService.deleteChat(idToGrpc(request!!)) })
+        return idToGrpc(request!!)
+            .map { chatService.deleteChat(it) }
+            .then(Mono.empty())
     }
 
-    override fun addUserToTheChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Empty> {
-        val pairReq = updateGrpcToChat(request!!)
-        return Mono.just(empty { chatService.addUserToTheChat(pairReq.first, pairReq.second) })
+    override fun addUserToTheChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Services.ChatResponse> {
+        return updateGrpcToChat(request!!)
+            .map { chatService.addUserToTheChat(it.first, it.second) }
+            . flatMap { chatToGrpcMono(it) }
     }
 
-    override fun deleteUserFromChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Empty> {
-        val pairReq = updateGrpcToChat(request!!)
-        return Mono.just(empty { chatService.deleteUserFromChat(pairReq.first, pairReq.second) })
+    override fun deleteUserFromChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Services.ChatResponse> {
+        return updateGrpcToChat(request!!)
+            .map { chatService.deleteUserFromChat(it.first, it.second) }
+            . flatMap { chatToGrpcMono(it) }
     }
 
     override fun getChatById(request: Mono<Services.id>?): Mono<Services.FullChatResponse> {
-        return chatService.getChatById(idToGrpc(request!!))
-            .map {
-                fullChatToGrpc(it)
-            }
+        return idToGrpc(request!!)
+            .map { chatService.getChatById(it) }
+            .flatMap { fullChatToGrpc(it) }
     }
 }

@@ -34,8 +34,8 @@ message UserResponse{
   string name = 2;
   string phoneNumber = 3;
   string bio = 4;
-  repeated string chat = 5;
-  repeated string message = 6;
+  repeated ChatDescription chat = 5;
+  repeated MessageDescription message = 6;
 }
 //============================================================================================
 //Request
@@ -93,6 +93,10 @@ message FullChatResponse{
   repeated UserDescription userList = 2;
   repeated MessageDescription messageList = 3;
 }
+
+message Empty{
+
+}
 //============================================================================================
 service UserService{
   rpc findUserById(id) returns (UserResponse);
@@ -114,7 +118,7 @@ service ChatService{
   rpc findAllChats(google.protobuf.Empty) returns (stream ChatResponse);
   rpc createChat(ChatDescription) returns (ChatResponse);
   rpc deleteChat(id) returns (google.protobuf.Empty);
-  rpc addUserToTheChat(ChatUpdateRequest) returns (google.protobuf.Empty);
-  rpc deleteUserFromChat(ChatUpdateRequest) returns (google.protobuf.Empty);
+  rpc addUserToTheChat(ChatUpdateRequest) returns (ChatResponse);
+  rpc deleteUserFromChat(ChatUpdateRequest) returns (ChatResponse);
   rpc getChatById(id) returns (FullChatResponse);
 }

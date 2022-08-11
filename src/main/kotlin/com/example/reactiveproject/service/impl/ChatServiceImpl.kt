@@ -13,6 +13,7 @@ import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 
 
 @Service
@@ -32,9 +33,9 @@ class ChatServiceImpl(
         chatRepository.deleteById(id).subscribe()
     }
 
-    override fun addUserToTheChat(chatId: String, userId: String) {
+    override fun addUserToTheChat(chatId: String, userId: String):Mono<Chat> {
 
-        userRepository!!.findById(userId)
+        return userRepository!!.findById(userId)
             .switchIfEmpty(
                 Mono.error(NotFoundException())
             )
@@ -53,13 +54,13 @@ class ChatServiceImpl(
             .flatMap {
                 chatRepository.save(it)
             }
-            .subscribe()
+            .toMono()
     }
 
 
-    override fun deleteUserFromChat(chatId: String, userId: String) {
+    override fun deleteUserFromChat(chatId: String, userId: String): Mono<Chat> {
 
-        userRepository!!.findById(userId)
+        return userRepository!!.findById(userId)
             .switchIfEmpty(
                 Mono.error(NotFoundException())
             )
@@ -78,7 +79,7 @@ class ChatServiceImpl(
             .flatMap {
                 chatRepository.save(it)
             }
-            .subscribe()
+            .toMono()
     }
 
 

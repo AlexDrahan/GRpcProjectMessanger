@@ -5,11 +5,11 @@ import com.google.protobuf.Timestamp
 import reactor.core.publisher.Mono
 import java.time.*
 
-fun idToGrpc(grpcId: Mono<Services.id>): String{
-    return grpcId.block()!!.id.toString()
+fun idToGrpc(grpcId: Mono<Services.id>): Mono<String>{
+    return grpcId.map {
+        it.id.toString()
+    }
 }
-
-
 
 
 fun timestampFromLocalDate(localDate: LocalDateTime): Timestamp {

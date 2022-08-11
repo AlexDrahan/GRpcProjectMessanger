@@ -61,8 +61,8 @@ internal class ChatControllerTest{
         val chat = Chat(
             id = ObjectId.get().toString(),
             name = randomName(),
-            userIds = setOf(userId),
-            messageIds = listOf(messageId)
+            userIds = setOf(userId) as HashSet,
+            messageIds = mutableListOf(messageId)
         )
         return chat
     }

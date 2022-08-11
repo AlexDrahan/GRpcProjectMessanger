@@ -11,9 +11,9 @@ interface ChatService {
     fun createChat(chat: Chat): Mono<Chat>
     fun deleteChat(id: String)
 
-    fun addUserToTheChat(chatId: String, userId: String)
+    fun addUserToTheChat(chatId: String, userId: String): Mono<Chat>
 
-    fun deleteUserFromChat(chatId: String, userId: String)
+    fun deleteUserFromChat(chatId: String, userId: String):Mono<Chat>
 
     fun findAllChats(): Flux<Chat>
 

@@ -8,34 +8,24 @@ import com.example.reactiveproject.model.Message
 import com.example.reactiveproject.model.User
 import reactor.core.publisher.Mono
 
-fun grpcToChat(grpcChat: Mono<Services.ChatDescription>): Chat {
+fun grpcToChat(grpcChat: Mono<Services.ChatDescription>): Mono<Chat> {
 
-    var userList = mutableSetOf<String>()
-    for (i in grpcChat.block()!!.userIdsList){
-        userList.add(i)
-    }
-
-    return grpcChat.block().let {
+    return grpcChat.map {
         Chat(
             name = it!!.name,
             messageIds = it.messageIdsList,
-            userIds = userList,
+            userIds = it.userIdsList.toMutableSet()
         )
     }
 }
 
 fun grpcToChatUnMono(grpcChat: Services.ChatDescription): Chat {
 
-    var userList = mutableSetOf<String>()
-    for (i in grpcChat!!.userIdsList){
-        userList.add(i)
-    }
-
     return grpcChat.let {
         Chat(
             name = it!!.name,
             messageIds = it.messageIdsList,
-            userIds = userList,
+            userIds = it.userIdsList.toMutableSet(),
         )
     }
 }
@@ -45,6 +35,31 @@ fun chatToGrpc(chat : Chat): Services.ChatResponse{
         .newBuilder()
         .apply {
             id = chat.id
+            name = chat.name
+            addAllMessageIds(chat.messageIds)
+            addAllUserIds(chat.userIds)
+        }
+        .build()
+}
+
+fun chatToGrpcMono(chat : Mono<Chat>): Mono<Services.ChatResponse>{
+    return chat.map {
+        Services.ChatResponse
+            .newBuilder()
+            .apply {
+                id = it.id
+                name = it.name
+                addAllMessageIds(it.messageIds)
+                addAllUserIds(it.userIds)
+            }
+            .build()
+    }
+}
+
+fun chatToGrpcDescription(chat : Chat): Services.ChatDescription{
+    return Services.ChatDescription
+        .newBuilder()
+        .apply {
             name = chat.name
             addAllMessageIds(chat.messageIds)
             addAllUserIds(chat.userIds)
@@ -65,29 +80,24 @@ fun chatToGrpcRequest(chat : Chat): Services.ChatDescription{
         .build()
 }
 
-fun updateGrpcToChat(request: Mono<Services.ChatUpdateRequest>): Pair<String, String> {
-    return request.block().let {
+fun updateGrpcToChat(request: Mono<Services.ChatUpdateRequest>): Mono<Pair<String, String>> {
+    return request.map {
         it!!.chatId.toString() to it.userId.toString()
     }
 }
 
 
-fun fullChatToGrpc(request: FullChat): Services.FullChatResponse{
-    var messageList = mutableListOf<Message>()
-    for (i in request.messageList){
-        messageList.add(i)
+fun fullChatToGrpc(request: Mono<FullChat>): Mono<Services.FullChatResponse>{
+
+    return request.map {
+        Services.FullChatResponse
+            .newBuilder()
+            .apply {
+                chat = chatToGrpcRequest(it.chat)
+                addAllMessageList(it.messageList.map { messageToGrpc(it) })
+                addAllUserList(it.userList.map { userToGrpcDescription(it) })
+            }
+            .build()
     }
-    var userList = mutableListOf<User>()
-    for (i in request.userList){
-        userList.add(i)
-    }
-    return Services.FullChatResponse
-        .newBuilder()
-        .apply {
-            chat = chatToGrpcRequest(request.chat)
-            userList = userList
-            messageList = messageList
-        }
-        .build()
 }
 

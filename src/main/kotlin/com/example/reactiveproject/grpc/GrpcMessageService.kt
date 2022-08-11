@@ -18,28 +18,28 @@ class GrpcMessageService: ReactorMessageServiceGrpc.MessageServiceImplBase(){
     lateinit var messageService: MessageService
 
     override fun findMessage(request: Mono<Services.text>?): Flux<Services.MessageResponse> {
-        return messageService.findMessage(textToGrpc(request!!))
-            .map {
-                messageToGrpc(it!!)
-            }
+        return textToGrpc(request!!)
+            .flatMapMany { messageToGrpc(messageService.findMessage(it)) }
     }
 
     override fun sendMessage(request: Mono<Services.MessageDescription>?): Mono<Services.MessageResponse> {
-        return messageService.sendMessage(grpcToMessage(request!!))
-            .map {
-                messageToGrpc(it)
-            }
+        return grpcToMessage(request!!)
+            .map { messageService.sendMessage(it) }
+            .flatMap { messageToGrpcMono(it) }
+
     }
 
     override fun deleteMessage(request: Mono<Services.id>?): Mono<Empty> {
-        return Mono.just(empty { messageService.deleteMessage(idToGrpc(request!!)) })
+        return idToGrpc(request!!)
+            .map {messageService.deleteMessage(it)}
+            .then(Mono.empty())
+
     }
 
     override fun editMessage(request: Mono<Services.MessageUpdateRequest>?): Mono<Services.MessageResponse> {
-        val pairReq = updateGrpcToMessage(request)
-        return messageService.editMessage(pairReq.first, pairReq.second)
-            .map {
-                updateMessageToGrpc(it)
-            }
+        return updateGrpcToMessage(request)
+            .map { messageService.editMessage(it.first, it.second)}
+            .flatMap { updateMessageToGrpcMono(it) }
+
     }
 }
