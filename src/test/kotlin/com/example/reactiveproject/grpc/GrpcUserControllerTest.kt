@@ -10,10 +10,13 @@ import com.example.reactiveproject.service.impl.UserServiceImpl
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import com.example.reactiveproject.helper.*
+import com.example.reactiveproject.model.Chat
+import com.example.reactiveproject.model.Message
 import com.google.protobuf.Empty
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -79,52 +82,69 @@ internal class GrpcUserControllerTest{
     @Test
     fun `should return user by id`(){
         val user = prepareData()
-        val grpcUser = userToGrpcMono(user)
+        val grpcUser = userToGrpcUnMonoResponse(user)
 
         Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
         val request = Services.id.newBuilder().setId(user.id).build()
         val connect = serviceStub.findUserById(request)
 
-//        StepVerifier.create(connect)
-//            .expectNext(grpcUser)
-//            .verifyComplete()
+        StepVerifier.create(connect)
+            .expectNext(grpcUser)
+            .verifyComplete()
     }
 
     @Test
     fun `should return user by userName`(){
         val user = prepareData()
-        val grpcUser = userToGrpcMono(user)
+        val grpcUser = userToGrpcUnMonoResponse(user)
 
         Mockito.`when`(userRepository.findByName(user.name)).thenReturn(Mono.just(user))
         val request = Services.name.newBuilder().setName(user.name).build()
         val connect = serviceStub.findUserByUserName(request)
 
-//        StepVerifier.create(connect)
-//            .expectNext(grpcUser)
-//            .verifyComplete()
+        StepVerifier.create(connect)
+            .expectNext(grpcUser)
+            .verifyComplete()
     }
 
     @Test
     fun `should find user by phone number`(){
         val user = prepareData()
-        val grpcUser = userToGrpcMono(user)
+        val grpcUser = userToGrpcUnMonoResponse(user)
 
         Mockito.`when`(userRepository.findByPhoneNumber(user.phoneNumber)).thenReturn(Mono.just(user))
         val request = Services.phoneNumber.newBuilder().setPhoneNumber(user.phoneNumber).build()
         val connect = serviceStub.findUserByPhoneNumber(request)
 
-//        StepVerifier.create(connect)
-//            .expectNext(grpcUser)
-//            .verifyComplete()
+        StepVerifier.create(connect)
+            .expectNext(grpcUser)
+            .verifyComplete()
     }
 
     @Test
     fun `should create user`(){
-        val user = prepareData()
-        val grpcUser = userToGrpcMono(user)
+        val userid = ObjectId.get().toString()
+        val user = User(
+            id = userid,
+            name = "Andrew",
+            phoneNumber = "+3809888888888",
+            bio = "dsdadfsdfsdf",
+            chat = listOf(Chat(
+                name = "dfg",
+                messageIds = mutableListOf("12","er"),
+                userIds = mutableSetOf("123", "5")
+            )),
+            message = listOf(Message(
+                text = "333",
+                messageUserId = "1",
+                messageChatId = "1"
+            ))
+        )
+        val grpcUser = userToGrpcUnMonoResponse(user)
 
-        Mockito.`when`(userRepository.save(user)).thenReturn(Mono.just(user))
+        Mockito.`when`(userRepository.save(ArgumentMatchers.any(User::class.java))).thenReturn(Mono.just(user))
         val request = Services.UserDescription.newBuilder().apply {
+
             name = "Andrew"
             phoneNumber = "+3809888888888"
             bio = "dsdadfsdfsdf"
@@ -143,9 +163,9 @@ internal class GrpcUserControllerTest{
 
          val connection = serviceStub.createUser(request)
 
-//        StepVerifier.create(connection)
-//            .expectNext(grpcUser)
-//            .verifyComplete()
+        StepVerifier.create(connection)
+            .expectNext(grpcUser)
+            .verifyComplete()
 
     }
 
@@ -160,9 +180,6 @@ internal class GrpcUserControllerTest{
             chat = emptyList(),
             message = emptyList()
         )
-        Mockito.`when`(userRepository.save(user)).thenReturn(Mono.just(user))
-        Mockito.`when`(userRepository.findById(id)).thenReturn(Mono.just(user))
-
         val userUp = User(
             id = id,
             name = "New name",
@@ -171,16 +188,9 @@ internal class GrpcUserControllerTest{
             chat = emptyList(),
             message = emptyList()
         )
+        Mockito.`when`(userRepository.save(ArgumentMatchers.any(User::class.java))).thenReturn(Mono.just(userUp))
+        Mockito.`when`(userRepository.findById(id)).thenReturn(Mono.just(user))
 
-        val grpcUserRequest = Services.UserDescription.newBuilder().apply {
-            User(
-                name = "Andrew",
-                phoneNumber = "+3809888888888",
-                bio = "dsdadfsdfsdf",
-                chat = emptyList(),
-                message = emptyList()
-            )
-        }.build()
 
         val request = Services.UserUpdateRequest.newBuilder().apply {
             userId = id
@@ -203,9 +213,9 @@ internal class GrpcUserControllerTest{
 
         val connection = serviceStub.updateUser(request)
 
-//        StepVerifier.create(connection)
-//            .expectNext(userToGrpc(userUp))
-//            .verifyComplete()
+        StepVerifier.create(connection)
+            .expectNext(userToGrpcUnMonoResponse(userUp))
+            .verifyComplete()
 
     }
 
@@ -220,9 +230,9 @@ internal class GrpcUserControllerTest{
         val request = Services.id.newBuilder().setId(user.id).build()
         val connect = serviceStub.deleteUser(request)
 
-        StepVerifier.create(connect)
-            .expectNext(empty)
-            .verifyComplete()
+        val expected = Services.DeleteAnswer.newBuilder().apply { text = "User is deleted" }.build()
+
+        StepVerifier.create(connect).expectNext(expected).verifyComplete()
 
     }
 }

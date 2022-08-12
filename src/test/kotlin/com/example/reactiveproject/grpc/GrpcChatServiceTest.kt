@@ -29,8 +29,11 @@ import reactor.kotlin.core.publisher.toFlux
 import reactor.test.StepVerifier
 import java.time.LocalDateTime
 import com.example.reactiveproject.helper.*
+import com.example.reactiveproject.model.FullChat
 import org.mockito.ArgumentMatchers
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
+import reactor.tools.agent.ReactorDebugAgent
 
 @SpringBootTest
 @ExtendWith(SpringExtension::class)
@@ -127,13 +130,56 @@ internal class GrpcChatServiceTest{
     }
 
     @Test
+    fun `should add user to chat`(){
+        var user = prepareUserData()
+        var message = prepareData()
+        var chat = prepareChatData(user.id!!, message.id!!)
+        Mockito.`when`(chatRepository.save(ArgumentMatchers.any(Chat::class.java))).thenReturn(Mono.just(chat))
+        Mockito.`when`(chatRepository.findChatById(chat.id!!)).thenReturn(Mono.just(chat))
+        Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
+
+        val request = Services.ChatUpdateRequest.newBuilder().apply {
+            chatId = chat.id
+            userId = user.id
+        }.build()
+        val connect = serviceStub.addUserToTheChat(request)
+
+        StepVerifier.create(connect)
+            .expectNext(chatToGrpc(chat))
+            .verifyComplete()
+    }
+
+
+    @Test
+    fun `should get full chat by chat id`(){
+        var user = prepareUserData()
+        var message = prepareData()
+        var chat = prepareChatData(user.id!!, message.id!!)
+        var fullchat = FullChat(chat, listOf(user), listOf(message))
+
+        Mockito.`when`(chatRepository.findChatById(chat.id!!)).thenReturn(Mono.just(chat))
+        Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
+        Mockito.`when`(messageRepository.findById(message.id!!)).thenReturn(Mono.just(message))
+        Mockito.`when`(fullChatRepository.save(ArgumentMatchers.any(FullChat::class.java))).thenReturn(fullchat.toMono())
+
+        val request = Services.id.newBuilder().setId(chat.id).build()
+        val connect = serviceStub.getChatById(request)
+
+        StepVerifier.create(connect)
+            .expectNext(
+                fullChatToGrpcMono(fullchat)
+            )
+            .verifyComplete()
+    }
+
+    @Test
     fun `should create chat`(){
         val user = prepareUserData()
         val message = prepareData()
         val chat = prepareChatData(user.id!!, message.id!!)
         val grpcChat = chatToGrpc(chat)
 
-        Mockito.`when`(chatRepository.save(chat)).thenReturn(Mono.just(chat))
+        Mockito.`when`(chatRepository.save(ArgumentMatchers.any(Chat::class.java))).thenReturn(Mono.just(chat))
 
         val request =
             Services.ChatDescription.newBuilder().apply {
@@ -151,31 +197,11 @@ internal class GrpcChatServiceTest{
     }
 
     @Test
-    fun `should add user to chat`(){
-        var user = prepareUserData()
-        var message = prepareData()
-        var chat = prepareChatData(user.id!!, message.id!!)
-        Mockito.`when`(chatRepository.save(chat)).thenReturn(Mono.just(chat))
-        Mockito.`when`(chatRepository.findChatById(chat.id!!)).thenReturn(Mono.just(chat))
-        Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
-
-        val request = Services.ChatUpdateRequest.newBuilder().apply {
-            chatId = chat.id
-            userId = user.id
-        }.build()
-        val connect = serviceStub.addUserToTheChat(request)
-
-        StepVerifier.create(connect)
-            .expectNext(chatToGrpc(chat))
-            .verifyComplete()
-    }
-
-    @Test
     fun `should delete user from chat`(){
         var user = prepareUserData()
         var message = prepareData()
         var chat = prepareChatData(user.id!!, message.id!!)
-        Mockito.`when`(chatRepository.save(chat)).thenReturn(Mono.just(chat))
+        Mockito.`when`(chatRepository.save(ArgumentMatchers.any(Chat::class.java))).thenReturn(Mono.just(chat))
         Mockito.`when`(chatRepository.findChatById(chat.id!!)).thenReturn(Mono.just(chat))
         Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
 
@@ -203,9 +229,9 @@ internal class GrpcChatServiceTest{
         val request = Services.id.newBuilder().setId(chat.id).build()
         val connect = serviceStub.deleteChat(request)
 
-        StepVerifier.create(connect)
-            .expectNext(empty)
-            .verifyComplete()
+        val expected = Services.DeleteAnswer.newBuilder().apply { text = "Chat is deleted" }.build()
+
+        StepVerifier.create(connect).expectNext(expected).verifyComplete()
 
     }
 

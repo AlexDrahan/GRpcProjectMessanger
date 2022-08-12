@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 
 @GRpcService
 class GrpcChatService: ReactorChatServiceGrpc.ChatServiceImplBase() {
@@ -19,38 +20,36 @@ class GrpcChatService: ReactorChatServiceGrpc.ChatServiceImplBase() {
 
     override fun findAllChats(request: Mono<Empty>?): Flux<Services.ChatResponse> {
         return chatService.findAllChats()
-            .map {
-                chatToGrpc(it)
-            }
-    }
-
-    override fun createChat(request: Mono<Services.ChatDescription>?): Mono<Services.ChatResponse> {
-        return  grpcToChat(request!!)
-            .map { chatService.createChat(it) }
             .flatMap { chatToGrpcMono(it) }
     }
 
-    override fun deleteChat(request: Mono<Services.id>?): Mono<Empty> {
+    override fun createChat(request: Mono<Services.ChatDescription>?): Mono<Services.ChatResponse> {
+        return  grpcToChat(request!!).log("1")
+            .flatMap { chatService.createChat(it) }.log("2")
+            .map { chatToGrpc(it) }.log("3")
+    }
+
+    override fun deleteChat(request: Mono<Services.id>?): Mono<Services.DeleteAnswer> {
         return idToGrpc(request!!)
-            .map { chatService.deleteChat(it) }
-            .then(Mono.empty())
+            .flatMap { chatService.deleteChat(it) }
+            .then(Services.DeleteAnswer.newBuilder().apply { text = "Chat is deleted" }.build().toMono())
     }
 
     override fun addUserToTheChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Services.ChatResponse> {
         return updateGrpcToChat(request!!)
-            .map { chatService.addUserToTheChat(it.first, it.second) }
-            . flatMap { chatToGrpcMono(it) }
+            .flatMap { chatService.addUserToTheChat(it.first, it.second) }
+            . map { chatToGrpc(it) }
     }
 
     override fun deleteUserFromChat(request: Mono<Services.ChatUpdateRequest>?): Mono<Services.ChatResponse> {
         return updateGrpcToChat(request!!)
-            .map { chatService.deleteUserFromChat(it.first, it.second) }
-            . flatMap { chatToGrpcMono(it) }
+            .flatMap { chatService.deleteUserFromChat(it.first, it.second) }
+            . map { chatToGrpc(it) }
     }
 
     override fun getChatById(request: Mono<Services.id>?): Mono<Services.FullChatResponse> {
         return idToGrpc(request!!)
-            .map { chatService.getChatById(it) }
-            .flatMap { fullChatToGrpc(it) }
+            .flatMap { chatService.getChatById(it) }
+            .map { fullChatToGrpcMono(it) }
     }
 }

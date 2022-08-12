@@ -30,8 +30,8 @@ class MessageServiceImpl(
         return messageRepository.save(messageSend)
     }
 
-    override fun deleteMessage(messageId: String) {
-        messageRepository.deleteById(messageId).subscribe()
+    override fun deleteMessage(messageId: String): Mono<Void> {
+        return messageRepository.deleteById(messageId)
     }
 
     override fun editMessage(messageId: String, message: Message): Mono<Message> {

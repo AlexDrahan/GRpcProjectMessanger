@@ -63,6 +63,20 @@ fun userToGrpc(user: Mono<User?>): Mono<Services.UserResponse>{
            .build()
     }
 }
+
+fun userToGrpcUnMonoResponse(it: User?): Services.UserResponse{
+    return Services.UserResponse
+            .newBuilder()
+            .apply {
+                id = it!!.id
+                name = it.name
+                phoneNumber = it.phoneNumber
+                bio = it.bio
+                addAllMessage(it.message.map { messageToGrpc(it) })
+                addAllChat(it.chat.map { chatToGrpcDescription(it) })
+            }
+            .build()
+}
 fun userToGrpcForCreate(user: Mono<User>): Mono<Services.UserResponse> {
 
     return user.map {
@@ -152,4 +166,18 @@ fun updateUserToGrpc(user: Mono<User>): Mono<Services.UserResponse>{
                 addAllChat(it.chat.map { chatToGrpcDescription(it) })
             }.build()
     }
+}
+
+fun updateUserToGrpcUnMono(it: User): Services.UserResponse{
+    return Services.UserResponse
+            .newBuilder()
+            .apply {
+                id = it.id
+                bio = it.bio
+                name = it.name
+                phoneNumber = it.phoneNumber
+                addAllMessage(it.message.map { messageToGrpc(it) })
+                addAllChat(it.chat.map { chatToGrpcDescription(it) })
+            }.build()
+
 }

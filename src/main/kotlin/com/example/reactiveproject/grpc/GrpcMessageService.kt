@@ -11,6 +11,7 @@ import org.lognet.springboot.grpc.GRpcService
 import org.springframework.beans.factory.annotation.Autowired
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 
 @GRpcService
 class GrpcMessageService: ReactorMessageServiceGrpc.MessageServiceImplBase(){
@@ -24,22 +25,21 @@ class GrpcMessageService: ReactorMessageServiceGrpc.MessageServiceImplBase(){
 
     override fun sendMessage(request: Mono<Services.MessageDescription>?): Mono<Services.MessageResponse> {
         return grpcToMessage(request!!)
-            .map { messageService.sendMessage(it) }
-            .flatMap { messageToGrpcMono(it) }
+            .flatMap { messageService.sendMessage(it) }
+            .map { messageToGrpcUnMono(it) }
 
     }
 
-    override fun deleteMessage(request: Mono<Services.id>?): Mono<Empty> {
+    override fun deleteMessage(request: Mono<Services.id>?): Mono<Services.DeleteAnswer> {
         return idToGrpc(request!!)
-            .map {messageService.deleteMessage(it)}
-            .then(Mono.empty())
-
+            .flatMap { messageService.deleteMessage(it) }
+            .then(Services.DeleteAnswer.newBuilder().apply { text = "Message is deleted" }.build().toMono())
     }
 
     override fun editMessage(request: Mono<Services.MessageUpdateRequest>?): Mono<Services.MessageResponse> {
         return updateGrpcToMessage(request)
-            .map { messageService.editMessage(it.first, it.second)}
-            .flatMap { updateMessageToGrpcMono(it) }
+            .flatMap { messageService.editMessage(it.first, it.second)}
+            .map { updateMessageToGrpcUnMono(it) }
 
     }
 }

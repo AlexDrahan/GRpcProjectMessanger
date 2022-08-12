@@ -19,39 +19,40 @@ class GrpcUserService: ReactorUserServiceGrpc.UserServiceImplBase(){
 
     override fun findUserById(request: Mono<Services.id>?): Mono<Services.UserResponse> {
         return idToGrpc(request!!)
-            .map { userService.findByUserId(it) }
-            .flatMap { userToGrpc(it) }
+            .flatMap { userService.findByUserId(it) }
+            .map { userToGrpcUnMonoResponse(it) }
     }
 
     override fun findUserByUserName(request: Mono<Services.name>?): Mono<Services.UserResponse> {
         return userNameToGrpc(request!!)
-            .map {userService.findUserByUserName(it)}
-            .flatMap { userToGrpc(it) }
+            .flatMap {userService.findUserByUserName(it)}
+            .map { userToGrpcUnMonoResponse(it) }
 
     }
 
     override fun findUserByPhoneNumber(request: Mono<Services.phoneNumber>?): Mono<Services.UserResponse> {
         return phoneNumberToGrpc(request!!)
-            .map {userService.findUserByPhoneNumber(it)}
-            .flatMap { userToGrpc(it) }
+            .flatMap {userService.findUserByPhoneNumber(it)}
+            .map { userToGrpcUnMonoResponse(it) }
     }
 
     override fun createUser(request: Mono<Services.UserDescription>?): Mono<Services.UserResponse> {
-        return grpcToUser(request!!)
-            .map { userService.createUser(it) }
-            .flatMap { userToGrpcForCreate(it) }
+        return grpcToUser(request!!).log("1")
+            .flatMap { userService.createUser(it) }.log("2")
+            .map { userToGrpcUnMonoResponse(it) }.log("3")
     }
 
-    override fun deleteUser(request: Mono<Services.id>?): Mono<Empty> {
+
+    override fun deleteUser(request: Mono<Services.id>?): Mono<Services.DeleteAnswer> {
         return idToGrpc(request!!)
-            .map { userService.deleteUser(it) }
-            .flatMap { Mono.empty() }
+            .flatMap { userService.deleteUser(it) }
+            .then(Services.DeleteAnswer.newBuilder().apply { text = "User is deleted" }.build().toMono())
     }
 
     override fun updateUser(request: Mono<Services.UserUpdateRequest>?): Mono<Services.UserResponse> {
         return updateGrpcToUser(request)
-            .map { userService.updateUser(it.first, it.second)}
-            .flatMap { updateUserToGrpc(it) }
+            .flatMap { userService.updateUser(it.first, it.second)}
+            .map { updateUserToGrpcUnMono(it) }
 
     }
 }

@@ -8,7 +8,7 @@ interface UserService {
 
     fun createUser(user: User): Mono<User>
 
-    fun deleteUser(id: String)
+    fun deleteUser(id: String): Mono<Void>
 
     fun updateUser(id: String, user: User): Mono<User>
 

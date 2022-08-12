@@ -97,27 +97,31 @@ message FullChatResponse{
 message Empty{
 
 }
+
+message DeleteAnswer{
+  string text = 1;
+}
 //============================================================================================
 service UserService{
   rpc findUserById(id) returns (UserResponse);
   rpc findUserByUserName(name) returns (UserResponse);
   rpc findUserByPhoneNumber(phoneNumber) returns (UserResponse);
   rpc createUser(UserDescription) returns (UserResponse);
-  rpc deleteUser(id) returns (google.protobuf.Empty);
+  rpc deleteUser(id) returns (DeleteAnswer);
   rpc updateUser(UserUpdateRequest) returns (UserResponse);
 }
 
 service MessageService{
   rpc findMessage(text) returns (stream MessageResponse);
   rpc sendMessage(MessageDescription) returns (MessageResponse);
-  rpc deleteMessage(id) returns (google.protobuf.Empty);
+  rpc deleteMessage(id) returns (DeleteAnswer);
   rpc editMessage(MessageUpdateRequest) returns (MessageResponse);
 }
 
 service ChatService{
   rpc findAllChats(google.protobuf.Empty) returns (stream ChatResponse);
   rpc createChat(ChatDescription) returns (ChatResponse);
-  rpc deleteChat(id) returns (google.protobuf.Empty);
+  rpc deleteChat(id) returns (DeleteAnswer);
   rpc addUserToTheChat(ChatUpdateRequest) returns (ChatResponse);
   rpc deleteUserFromChat(ChatUpdateRequest) returns (ChatResponse);
   rpc getChatById(id) returns (FullChatResponse);

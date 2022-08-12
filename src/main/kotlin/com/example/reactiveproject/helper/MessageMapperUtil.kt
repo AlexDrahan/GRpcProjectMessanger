@@ -97,6 +97,19 @@ fun updateMessageToGrpc(message: Message): Mono<Services.MessageResponse>{
         .toMono()
 }
 
+fun messageToGrpcUnMono(message: Message): Services.MessageResponse{
+    return Services.MessageResponse
+        .newBuilder()
+        .apply {
+            id = message.id
+            text = message.text
+            dateTime = timestampFromLocalDate(LocalDateTime.parse(message.datetime))
+            messageChatId = message.messageChatId
+            messageUserId = message.messageUserId
+        }
+        .build()
+}
+
 fun updateMessageToGrpcMono(message: Mono<Message>): Mono<Services.MessageResponse>{
     return message.map {
         Services.MessageResponse
@@ -107,4 +120,18 @@ fun updateMessageToGrpcMono(message: Mono<Message>): Mono<Services.MessageRespon
             }
             .build()
     }
+}
+
+fun updateMessageToGrpcUnMono(it: Message): Services.MessageResponse{
+    return Services.MessageResponse
+            .newBuilder()
+            .apply {
+                id = it.id
+                text = it.text
+                dateTime = timestampFromLocalDate(LocalDateTime.parse(it.datetime))
+                messageChatId = it.messageChatId
+                messageUserId = it.messageUserId
+            }
+            .build()
+
 }

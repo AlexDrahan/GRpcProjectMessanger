@@ -29,8 +29,8 @@ class ChatServiceImpl(
 
     }
 
-    override fun deleteChat(id: String) {
-        chatRepository.deleteById(id).subscribe()
+    override fun deleteChat(id: String): Mono<Void> {
+        return chatRepository.deleteById(id)
     }
 
     override fun addUserToTheChat(chatId: String, userId: String):Mono<Chat> {

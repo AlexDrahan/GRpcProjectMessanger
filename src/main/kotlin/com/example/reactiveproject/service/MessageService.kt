@@ -8,7 +8,7 @@ interface MessageService {
 
     fun sendMessage(message: Message): Mono<Message>
 
-    fun deleteMessage(messageId: String)
+    fun deleteMessage(messageId: String): Mono<Void>
 
     fun editMessage(id: String, message: Message): Mono<Message>
 

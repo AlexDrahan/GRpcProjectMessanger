@@ -7,6 +7,7 @@ import com.example.reactiveproject.model.FullChat
 import com.example.reactiveproject.model.Message
 import com.example.reactiveproject.model.User
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 
 fun grpcToChat(grpcChat: Mono<Services.ChatDescription>): Mono<Chat> {
 
@@ -42,9 +43,8 @@ fun chatToGrpc(chat : Chat): Services.ChatResponse{
         .build()
 }
 
-fun chatToGrpcMono(chat : Mono<Chat>): Mono<Services.ChatResponse>{
-    return chat.map {
-        Services.ChatResponse
+fun chatToGrpcMono(it : Chat): Mono<Services.ChatResponse>{
+    return Services.ChatResponse
             .newBuilder()
             .apply {
                 id = it.id
@@ -53,7 +53,8 @@ fun chatToGrpcMono(chat : Mono<Chat>): Mono<Services.ChatResponse>{
                 addAllUserIds(it.userIds)
             }
             .build()
-    }
+        .toMono()
+
 }
 
 fun chatToGrpcDescription(chat : Chat): Services.ChatDescription{
@@ -99,5 +100,17 @@ fun fullChatToGrpc(request: Mono<FullChat>): Mono<Services.FullChatResponse>{
             }
             .build()
     }
+}
+fun fullChatToGrpcMono(it: FullChat): Services.FullChatResponse {
+
+    return Services.FullChatResponse
+            .newBuilder()
+            .apply {
+                chat = chatToGrpcRequest(it.chat)
+                addAllMessageList(it.messageList.map { messageToGrpc(it) })
+                addAllUserList(it.userList.map { userToGrpcDescription(it) })
+            }
+            .build()
+
 }
 
