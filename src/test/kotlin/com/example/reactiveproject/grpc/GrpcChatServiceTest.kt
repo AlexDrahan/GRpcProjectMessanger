@@ -152,10 +152,10 @@ internal class GrpcChatServiceTest{
 
     @Test
     fun `should get full chat by chat id`(){
-        var user = prepareUserData()
-        var message = prepareData()
-        var chat = prepareChatData(user.id!!, message.id!!)
-        var fullchat = FullChat(chat, listOf(user), listOf(message))
+        val user = prepareUserData()
+        val message = prepareData()
+        val chat = prepareChatData(user.id!!, message.id!!)
+        val fullchat = FullChat(chat, listOf(user), listOf(message))
 
         Mockito.`when`(chatRepository.findChatById(chat.id!!)).thenReturn(Mono.just(chat))
         Mockito.`when`(userRepository.findById(user.id!!)).thenReturn(Mono.just(user))
